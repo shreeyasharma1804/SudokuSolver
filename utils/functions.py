@@ -1,9 +1,17 @@
 import cv2
 import numpy as np
-
+from tensorflow import keras
+from keras.models import load_model
+import os
+path = os.getcwd()
+constant=255
+def initializePredictionModel():
+    model=load_model(os.path.join(path ,'utils','digit_recognition.h5'))
+    
+    return model
 def proc(image):
     blurred_image=cv2.GaussianBlur(image,(5,5),1)
-    proc_image=cv2.adaptiveThreshold(blurred_image,255,1,1,11,2)
+    proc_image=cv2.adaptiveThreshold(blurred_image,constant,1,1,11,2)
     return proc_image
 
 
@@ -30,4 +38,36 @@ def reorder(mypoints):
     mypointsNew[1]=mypoints[np.argmin(sub)]
     mypointsNew[2]=mypoints[np.argmax(sub)]
     return mypointsNew
-    
+
+
+def splitBoxes(image):
+    rows=np.vsplit(image,9)
+    boxes=[]
+    for row in rows:
+        cols=np.hsplit(row,9)
+        for box in cols:
+            boxes.append(box)
+    return boxes
+
+
+def getPredection(boxes,model):
+    result=[]
+    for image in boxes:
+        # image=np.asarray(image)
+        # image=image[4:image.shape[0]-4,4:image.shape[1]-4]
+        image=cv2.resize(image,(28,28))
+        # image=image/255
+        image=image.reshape(1,28,28,1)
+        image = image.astype("float32")/255
+        predictions=model.predict(image)
+        classIndex=np.argmax(predictions)
+        probability_value=np.amax(predictions)
+
+        if probability_value> 0.8:
+            result.append(classIndex)
+        else:
+            result.append(0)
+
+    print("Debug: ", result)
+    return result
+             
