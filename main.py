@@ -35,8 +35,7 @@ if __name__ == "__main__":
         imageSolvedDigits=blank_image.copy()
         print(imageWarpColor.shape)
         boxes=functions.splitBoxes(imageWarpColor)
-        # plt.imshow(boxes[2])
-        # plt.show()
+        
         print(len(boxes))
         #calling the model 
         numbers=functions.getPredection(boxes,model)
