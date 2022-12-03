@@ -3,18 +3,18 @@ import numpy as np
 from tensorflow import keras
 from keras.models import load_model
 import os
-#hello world
 path = os.getcwd()
 constant=255
+import matplotlib.pyplot as plt
+
 def initializePredictionModel():
     model=load_model(os.path.join(path ,'utils','digit_recognition.h5'))
-    
     return model
+
 def proc(image):
     blurred_image=cv2.GaussianBlur(image,(5,5),1)
     proc_image=cv2.adaptiveThreshold(blurred_image,constant,1,1,11,2)
     return proc_image
-
 
 def biggestContour(contours):
     biggest=np.array([])
@@ -40,35 +40,83 @@ def reorder(mypoints):
     mypointsNew[2]=mypoints[np.argmax(sub)]
     return mypointsNew
 
+def dfs(image, i, j, new_box):
+    if(i >= image.shape[0] or j >= image.shape[1] or new_box[i][j] == 255):
+        return
+    if(image[i][j] == 255):
+        new_box[i][j] = 255
+        dfs(image, i+1, j, new_box)
+        dfs(image, i-1, j, new_box)
+        dfs(image, i, j+1, new_box)
+        dfs(image, i, j-1, new_box)
+    else:
+        return
 
 def splitBoxes(image):
+    kernel = np.ones((3, 3), np.uint8)
     rows=np.vsplit(image,9)
     boxes=[]
+    zeros = {}
+    i = 0
     for row in rows:
         cols=np.hsplit(row,9)
         for box in cols:
-            boxes.append(box)
-    return boxes
+            box = cv2.dilate(box, kernel, iterations=1)
+            # box = cv2.Canny(box, 100, 120)
+            new_box = [[0 for i in range(40)] for j in range(40)]
+            ret,box = cv2.threshold(box,127,255,cv2.THRESH_BINARY)
+            x = box.shape[0]//2
+            is_Zero = True
+            for y in range(box.shape[1]//2-10, box.shape[1]//2+10):
+                if(box[x][y] == 255):
+                    is_Zero = False
+                    dfs(box, x, y, new_box)
+                    break
+            if(is_Zero):
+                zeros[i] = 1
+            boxes.append(np.array(new_box))
+            i+=1
+            # plt.imshow(boxes[-1], cmap="gray")
+            # plt.show()
+    return boxes, zeros
+
+def undesired_objects (image):
+    image = image.astype('uint8')
+    nb_components, output, stats, centroids = cv2.connectedComponentsWithStats(image, connectivity=8)
+    sizes = stats[:, -1]
+
+    max_label = 1
+    max_size = sizes[1]
+    for i in range(2, nb_components):
+        if sizes[i] > max_size:
+            max_label = i
+            max_size = sizes[i]
+
+    img2 = np.zeros(output.shape)
+    img2[output == max_label] = 255
+    return img2
 
 
-def getPredection(boxes,model):
+def getPredection(boxes, zeros, model):
     result=[]
+    i = 0
     for image in boxes:
+        if(i in zeros):
+            result.append(0)
         # image=np.asarray(image)
         # image=image[4:image.shape[0]-4,4:image.shape[1]-4]
-        image=cv2.resize(image,(28,28))
-        # image=image/255
-        image=image.reshape(1,28,28,1)
-        image = image.astype("float32")/255
-        predictions=model.predict(image)
-        classIndex=np.argmax(predictions)
-        probability_value=np.amax(predictions)
-
-        if probability_value> 0.8:
-            result.append(classIndex)
         else:
-            result.append(0)
-
-    print("Debug: ", result)
+            image=cv2.resize(image.astype("float32"),(28,28))
+            # image=image/255
+            # plt.imshow(image)
+            # plt.show()
+            image=image.reshape(1,28,28,1)
+            image = image.astype("float32")/255
+            predictions=model.predict(image, verbose=0)
+            classIndex=np.argmax(predictions)
+            probability_value=np.amax(predictions)
+            # print(predictions)
+            result.append(classIndex)
+        i+=1
     return result
              

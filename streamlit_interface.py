@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import time
+import main
 
 start_time = time.time()
 
@@ -16,17 +17,18 @@ st.sidebar.markdown(
 
 st.title("Real Time Sudoku Solver")
 
-image_file = st.file_uploader(label="Add image here",type=['jpg'])
+image_file = st.file_uploader(label="Add image here",type=['png'])
 
 if image_file is not None:
     with open(os.path.join("utils",image_file.name),"wb") as f: 
       f.write(image_file.getbuffer())      
-    os.rename(os.path.join("utils",image_file.name), os.path.join("utils", "suduko_image.jpg"))   
+    os.rename(os.path.join("utils",image_file.name), os.path.join("utils", "suduko.png"))   
     st.success("Saved File")
 
     with st.spinner('Processing...'):
-        time.sleep(5)
+        main.main()
+    st.image("solved.png")
     st.success('Done!')
 
-    os.remove(os.path.join("utils", "suduko_image.jpg"))
+    os.remove(os.path.join("utils", "suduko.png"))
 

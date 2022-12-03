@@ -3,8 +3,8 @@ from typing import List
 
 def solveSudoku(board: List[List[int]]) -> List[List[int]]:
 
-    board = [[int(val) if val.isdigit() else 0 for val in row]
-             for row in board]
+    # board = [[int(val) if val.isdigit() else 0 for val in row]
+    #          for row in board]
 
     def is_valid(i, j, val):
         if val in board[i]:
