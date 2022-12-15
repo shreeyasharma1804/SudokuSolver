@@ -3,9 +3,10 @@ import numpy as np
 from tensorflow import keras
 from keras.models import load_model
 import os
+import matplotlib.pyplot as plt
+
 path = os.getcwd()
 constant=255
-import matplotlib.pyplot as plt
 
 def initializePredictionModel():
     model=load_model(os.path.join(path ,'utils','digit_recognition.h5'))
@@ -62,7 +63,6 @@ def splitBoxes(image):
         cols=np.hsplit(row,9)
         for box in cols:
             box = cv2.dilate(box, kernel, iterations=1)
-            # box = cv2.Canny(box, 100, 120)
             new_box = [[0 for i in range(40)] for j in range(40)]
             ret,box = cv2.threshold(box,127,255,cv2.THRESH_BINARY)
             x = box.shape[0]//2
@@ -76,8 +76,6 @@ def splitBoxes(image):
                 zeros[i] = 1
             boxes.append(np.array(new_box))
             i+=1
-            # plt.imshow(boxes[-1], cmap="gray")
-            # plt.show()
     return boxes, zeros
 
 def undesired_objects (image):
@@ -103,19 +101,13 @@ def getPredection(boxes, zeros, model):
     for image in boxes:
         if(i in zeros):
             result.append(0)
-        # image=np.asarray(image)
-        # image=image[4:image.shape[0]-4,4:image.shape[1]-4]
         else:
             image=cv2.resize(image.astype("float32"),(28,28))
-            # image=image/255
-            # plt.imshow(image)
-            # plt.show()
             image=image.reshape(1,28,28,1)
             image = image.astype("float32")/255
             predictions=model.predict(image, verbose=0)
             classIndex=np.argmax(predictions)
             probability_value=np.amax(predictions)
-            # print(predictions)
             result.append(classIndex)
         i+=1
     return result

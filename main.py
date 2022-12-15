@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from utils import functions, backtrack
 import sys
 
+solved_sudoku = []
+
+
 def main():
 
     model=functions.initializePredictionModel()
@@ -31,14 +34,13 @@ def main():
         points1=np.float32(biggest_reorder)
         points2=np.float32([[0,0],[widthImg,0],[0,heightImg],[widthImg,heightImg]])
         matrix=cv2.getPerspectiveTransform(points1, points2)
-        
         imageWarpColor=cv2.warpPerspective(Image,matrix,(widthImg,heightImg))
         boxes, zeros =functions.splitBoxes(255-imageWarpColor)
         obtained_sudoku = np.array(functions.getPredection(boxes, zeros, model))
         obtained_sudoku = np.reshape(obtained_sudoku,(9,9))
         obtained_sudoku_cpy = obtained_sudoku.copy()
+        global solved_sudoku
         solved_sudoku = backtrack.solveSudoku(obtained_sudoku_cpy)
-        print(solved_sudoku)
 
         for i in range(9):
             for j in range(9):
@@ -46,3 +48,7 @@ def main():
                     imageWarpColor = cv2.putText(imageWarpColor, str(solved_sudoku[i][j]), (40*j+20, 40*i+30), cv2.FONT_HERSHEY_SIMPLEX,1, (0, 0, 0), 2, cv2.LINE_AA)
         
         cv2.imwrite("solved.png", imageWarpColor)
+
+
+def return_sudoku():
+    return solved_sudoku
